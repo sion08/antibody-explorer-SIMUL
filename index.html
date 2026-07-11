@@ -2,313 +2,87 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>항체 Explorer</title>
-    <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; display: flex; flex-direction: column; height: 100vh; background: #fafafa; }
-        nav { background: #333; color: white; display: flex; justify-content: space-around; padding: 10px; }
-        nav a { color: white; text-decoration: none; padding: 5px 10px; cursor: pointer; border-radius: 5px; }
-        nav a:hover { background: #555; }
-        nav a.active { background: #2196F3; font-weight: bold; }
-        
-        main { flex: 1; padding: 20px; overflow-y: auto; }
-        section { display: none; }
-        section.active { display: block; }
-        
-        button { padding: 10px 20px; border: none; background-color: #2196F3; color: white; border-radius: 5px; cursor: pointer; }
-        button:hover { background-color: #0b7dda; }
-        
-        #home_visual { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 70vh; }
-        
-        #structure_controls { margin-bottom: 10px; display: flex; gap: 10px; }
-        #canvas_3d { width: 100%; height: 60vh; border: 1px solid #ccc; background: black; }
-        #pdb_controls { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
-        
-        #geometry_content { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        #math_box, #explanation_box { border: 1px solid #eee; padding: 15px; background: white; }
-        
-        #medicine_cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
-        .med_card { border: 1px solid #ddd; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .med_card img { width: 100%; height: 150px; object-fit: cover; }
-        
-        #history_timeline { display: flex; overflow-x: auto; padding: 20px; border: 1px solid #ddd; background: white; }
-        .timeline_event { min-width: 150px; border: 1px solid #ccc; padding: 10px; margin: 0 10px; text-align: center; cursor: pointer; border-radius: 5px; background: #f9f9f9; }
-        .timeline_event:hover { background: #e0f7fa; }
-        #history_description { margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: white; }
-    </style>
     <script src="https://3dmol.org/build/3Dmol-min.js"></script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-            // Navigation
-            const navLinks = document.querySelectorAll('nav a');
-            const sections = document.querySelectorAll('main section');
-            
-            navLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href').substring(1);
-                    sections.forEach(s => s.classList.remove('active'));
-                    document.getElementById(targetId).classList.add('active');
-                    navLinks.forEach(nl => nl.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-
-            // "탐험 시작" button on Home
-            document.getElementById('explore_start').addEventListener('click', function() {
-                sections.forEach(s => s.classList.remove('active'));
-                document.getElementById('structure').classList.add('active');
-                navLinks.forEach(nl => nl.classList.remove('active'));
-                document.getElementById('nav_structure').classList.add('active');
-            });
-
-            // --- Structure Exploration (using 3Dmol.js) ---
-            let viewer = null;
-            const canvas3D = document.getElementById('canvas_3d');
-            
-            // Initialization
-            viewer = $3Dmol.createViewer(canvas3D, { backgroundColor: 'black' });
-            
-            function showTextbookModel() {
-                viewer.clear();
-                // This is a placeholder for a simplified, stylized model.
-                // In a full application, you might use primitive shapes (spheres, cylinders) via $3Dmol.js API
-                // OR load a custom model file that represents the textbook schematic (less standard in PDB).
-                // For this index.html, we'll use a text overlay to explain, as true stylized modeling is complex in standard libraries.
-                viewer.addLabel("교과서 모형 (3D 단순화)\n보라(H 사슬), 초록(L 사슬), 노랑(결합부위)\n여기에 마우스 올리면 설명", { position: { x: 0, y: 0, z: 0 }, fontColor: 'white' });
-                // Simulate hover areas
-                // In a real implementation, you'd define shapes and use picking.
-                
-                canvas3D.addEventListener('mousemove', function(e) {
-                    const rect = canvas3D.getBoundingClientRect();
-                    const x = e.clientX - rect.left;
-                    const y = e.clientY - rect.top;
-                    const infoBox = document.getElementById('textbook_info');
-                    if (x > canvas3D.offsetWidth / 2 && y < canvas3D.offsetHeight / 2) {
-                        infoBox.textContent = "Fab 영역: 항원을 인식하는 부분입니다.";
-                        infoBox.style.display = 'block';
-                        infoBox.style.left = `${e.clientX + 10}px`;
-                        infoBox.style.top = `${e.clientY + 10}px`;
-                    } else {
-                        infoBox.style.display = 'none';
-                    }
-                });
-                viewer.zoomTo();
-            }
-
-            function loadPDB(pdbId) {
-                viewer.clear();
-                $3Dmol.download("pdb:" + pdbId, viewer, { computeBonds: true }, function() {
-                    viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
-                    viewer.render();
-                });
-                document.getElementById('textbook_info').style.display = 'none'; // Hide hover info
-                canvas3D.removeEventListener('mousemove', function() {}); // Remove hover listener
-            }
-
-            document.getElementById('btn_textbook').addEventListener('click', showTextbookModel);
-            document.getElementById('btn_pdb_load').addEventListener('click', function() {
-                const pdbId = document.getElementById('pdb_id').value;
-                if(pdbId) loadPDB(pdbId);
-            });
-
-            document.getElementById('btn_keytruda').addEventListener('click', () => loadPDB('5wku')); // PDB ID for Keytruda complex
-            document.getElementById('btn_herceptin').addEventListener('click', () => loadPDB('1n8z')); // PDB ID for Herceptin complex
-            document.getElementById('btn_covid_ab').addEventListener('click', () => loadPDB('7jx3'));   // A COVID Ab
-
-            // Initial view
-            showTextbookModel();
-
-            // Compare view: For this simple index, we will open a separate modal/iframe for simplicity, but a dual viewer is also possible.
-            // A dual viewer can be done by creating two 3Dmol viewers.
-            let viewerLeft, viewerRight;
-            document.getElementById('btn_compare').addEventListener('click', function() {
-                const overlay = document.getElementById('compare_overlay');
-                overlay.style.display = 'flex';
-                
-                if (!viewerLeft) viewerLeft = $3Dmol.createViewer(document.getElementById('canvas_compare_left'), { backgroundColor: 'black' });
-                if (!viewerRight) viewerRight = $3Dmol.createViewer(document.getElementById('canvas_compare_right'), { backgroundColor: 'black' });
-
-                // Load Textbook Simplified on left
-                viewerLeft.clear();
-                viewerLeft.addLabel("교과서 단순화 모형", { position: { x: 0, y: 0, z: 0 }, fontColor: 'white' });
-                viewerLeft.zoomTo();
-                viewerLeft.render();
-
-                // Load a sample PDB (Keytruda) on right
-                viewerRight.clear();
-                $3Dmol.download("pdb:5wku", viewerRight, { computeBonds: true }, function() {
-                    viewerRight.setStyle({}, { cartoon: { color: 'spectrum' } });
-                    viewerRight.render();
-                });
-                viewerRight.zoomTo();
-            });
-
-            document.getElementById('close_compare').addEventListener('click', () => {
-                document.getElementById('compare_overlay').style.display = 'none';
-            });
-
-            // --- History Timeline ---
-            const historyDescriptions = {
-                'e1975': "1975년, Köhler와 Milstein이 하이브리도마 기술을 개발하여 단일 클론 항체를 생산할 수 있는 길을 열었습니다.",
-                'e1998': "1998년, 유방암 치료제인 허셉틴(Herceptin)이 FDA 승인을 받으며 항체 의약품의 시대를 본격적으로 열었습니다.",
-                'e2014': "2014년, 면역 관문 억제제인 키트루다(Keytruda)가 승인되어 암 치료에 혁명적인 변화를 가져왔습니다.",
-                'e2019': "2019년, 항체-약물 접합체(ADC)인 엔허투(Enhertu)가 승인되어 특정 암세포를 더욱 정밀하게 타격하는 기술을 선보였습니다.",
-                'eBispecific': "현재, 하나의 항체가 두 가지 다른 항원에 동시에 결합하는 이중 특이성 항체 개발이 활발히 진행 중입니다.",
-                'eADC': "현재, 항체에 암세포 사멸 약물을 결합시킨 항체-약물 접합체(ADC) 기술이 더욱 고도화되고 있습니다."
-            };
-
-            const timelineEvents = document.querySelectorAll('.timeline_event');
-            const descBox = document.getElementById('history_description');
-            
-            timelineEvents.forEach(event => {
-                event.addEventListener('click', function() {
-                    const eventId = this.id;
-                    descBox.textContent = historyDescriptions[eventId];
-                });
-            });
-        });
-    </script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; background: #fafafa; }
+        nav { background: #333; color: white; display: flex; justify-content: space-around; padding: 15px; }
+        nav a { color: white; text-decoration: none; cursor: pointer; }
+        section { display: none; padding: 20px; }
+        section.active { display: block; }
+        .canvas-area { width: 100%; height: 500px; background: #000; border-radius: 8px; }
+        .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+    </style>
 </head>
 <body>
     <nav>
-        <a href="#home" class="active" id="nav_home">🏠 Home</a>
-        <a href="#structure" id="nav_structure">🧬 구조 탐색</a>
-        <a href="#geometry">📐 기하학 분석</a>
-        <a href="#medicine">💊 항체 의약품</a>
-        <a href="#history">📈 발전사</a>
-        <a href="#lesson">📖 배운 내용</a>
+        <a onclick="show('structure')" class="active">🧬 구조 탐색</a>
+        <a onclick="show('medicine')">💊 항체 의약품</a>
+        <a onclick="show('geometry')">📐 기하학 분석</a>
     </nav>
-    
+
     <main>
-        <section id="home" class="active">
-            <div id="home_visual">
-                <h1>항체 Explorer</h1>
-                <p>"항체는 왜 원하는 물질만 정확히 찾을 수 있을까?"</p>
-                <button id="explore_start">탐험 시작</button>
-            }
+        <section id="structure" class="active">
+            <div class="box">
+                <h2>교과서 모형 상세</h2>
+                <p id="desc">항체 부위에 마우스를 올려보세요.</p>
+                <svg width="400" height="300" viewBox="0 0 400 300">
+                    <path d="M200,150 L150,50 M200,150 L250,50 M200,150 L200,250" stroke="#9a8cbf" stroke-width="20" fill="none" onmouseover="d('heavy')" />
+                    <path d="M130,80 L180,180 M270,80 L220,180" stroke="#9a8cbf" stroke-width="15" fill="none" onmouseover="d('light')" />
+                    <circle cx="140" cy="40" r="25" fill="#27ae60" onmouseover="d('fab')" />
+                    <circle cx="260" cy="40" r="25" fill="#27ae60" onmouseover="d('fab')" />
+                </svg>
+            </div>
+            <div class="canvas-area" id="viewer"></div>
         </section>
 
-        <section id="structure">
-            <div id="structure_controls">
-                <button id="btn_textbook">○ 교과서 모형 (3D 단순화)</button>
-                <div>
-                    <input type="text" id="pdb_id" placeholder="PDB ID (예: 1IGT)">
-                    <button id="btn_pdb_load">실제 단백질(PDB)</button>
+        <section id="medicine">
+            <div class="box">
+                <h2>항체 치료제</h2>
+                <div id="med_list">
+                    <h3>키트루다 (Keytruda)</h3>
+                    <p>질병: 흑색종 | 원리: PD-1/PD-L1 억제로 면역 세포 암세포 공격 유도</p>
+                    <button onclick="loadPDB('5wku')">입체 구조 보기</button>
                 </div>
-            </div>
-            <div style="position: relative;">
-                <div id="canvas_3d"></div>
-                <div id="textbook_info" style="display: none; position: absolute; background: white; border: 1px solid black; padding: 5px; z-index: 100;"></div>
-            </div>
-            <div id="pdb_controls">
-                <button id="btn_keytruda">Keytruda PDB</button>
-                <button id="btn_herceptin">Herceptin PDB</button>
-                <button id="btn_covid_ab">COVID Ab PDB</button>
-                <button id="btn_compare">Compare: 단순화 ↔ 실제</button>
-            </div>
-
-            <div id="compare_overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; flex-direction: column; align-items: center; justify-content: center;">
-                <div style="width: 90%; height: 80%; background: white; display: grid; grid-template-columns: 1fr 1fr; border-radius: 8px; overflow: hidden; padding: 10px;">
-                    <div id="canvas_compare_left" style="border: 1px solid #ccc; background: black; position: relative;"></div>
-                    <div id="canvas_compare_right" style="border: 1px solid #ccc; background: black; position: relative;"></div>
-                    <div style="position: absolute; bottom: 10px; left: 20px; color: white;">교과서 단순화</div>
-                    <div style="position: absolute; bottom: 10px; right: 20px; color: white;">실제 PDB</div>
-                </div>
-                <button id="close_compare" style="margin-top: 20px;">닫기</button>
             </div>
         </section>
 
         <section id="geometry">
-            <h1>기하학 분석</h1>
-            <div id="geometry_content">
-                <div id="math_box">
-                    <h2>두 항원 결합 부위 사이의 거리 계산</h2>
-                    <p>좌표 선택:</p>
-                    <div style="display: flex; gap: 10px;">
-                        <input type="text" id="coordA" placeholder="A (2,5,1)">
-                        <input type="text" id="coordB" placeholder="B (4,7,3)">
-                    </div>
-                    <p>↓ 거리 공식</p>
-                    <p>↓ 계산</p>
-                    <h3>결과: <span id="dist_result">3.46 Å</span></h3>
-                    <button onclick="document.getElementById('calc_steps').style.display='block'">계산 과정 보기</button>
-                </div>
-                <div id="explanation_box">
-                    <h2>단위 및 분석 방식</h2>
-                    <button onclick="document.getElementById('unit_expl').style.display='block'">왜 Å를 사용할까?</button>
-                </div>
+            <div class="box">
+                <h2>3차원 거리 계산</h2>
+                <p>$$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$</p>
             </div>
-            
-            <div id="calc_steps" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: white;">
-                <h3>계산 과정</h3>
-                <p>① 좌표 선택</p>
-                <p>↓</p>
-                <p>② 거리 공식: $\sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$</p>
-                <p>↓</p>
-                <p>③ 제곱: $\sqrt{(4-2)^2 + (7-5)^2 + (3-1)^2} = \sqrt{2^2 + 2^2 + 2^2}$</p>
-                <p>↓</p>
-                <p>④ 루트: $\sqrt{4+4+4} = \sqrt{12}$</p>
-                <p>↓</p>
-                <p>⑤ 거리: 3.46 Å</p>
-            </div>
-            <div id="unit_expl" style="display: none; margin-top: 20px; padding: 15px; border: 1px solid #ccc; background: white;">
-                <h3>단위 설명</h3>
-                <p>단백질은 원자 수준에서 분석합니다.</p>
-                <p>그래서</p>
-                <p>1 Å = 0.1 nm (또는 10<sup>-10</sup> m)</p>
-                <p>를 사용하여 미세한 원자 간 거리를 측정합니다.</p>
-            </div>
-        </section>
-
-        <section id="medicine">
-            <h1>항체 의약품</h1>
-            <div id="medicine_cards">
-                <div class="med_card">
-                    <img src="https://via.placeholder.com/250x150?text=Keytruda" alt="Keytruda">
-                    <h3>Keytruda</h3>
-                    <p>설명: 면역 항암제</p>
-                    <p>작용기전: PD-1/PD-L1 면역 관문 억제</p>
-                    <button onclick="sections.forEach(s=>s.classList.remove('active')); document.getElementById('structure').classList.add('active'); loadPDB('5wku'); navLinks.forEach(nl=>nl.classList.remove('active')); document.getElementById('nav_structure').classList.add('active');">구조 보기</button>
-                </div>
-                <div class="med_card">
-                    <img src="https://via.placeholder.com/250x150?text=Herceptin" alt="Herceptin">
-                    <h3>Herceptin</h3>
-                    <p>설명: 유방암 표적 치료제</p>
-                    <p>작용기전: HER2 단백질 과발현 억제</p>
-                    <button onclick="sections.forEach(s=>s.classList.remove('active')); document.getElementById('structure').classList.add('active'); loadPDB('1n8z'); navLinks.forEach(nl=>nl.classList.remove('active')); document.getElementById('nav_structure').classList.add('active');">구조 보기</button>
-                </div>
-                <div class="med_card">
-                    <img src="https://via.placeholder.com/250x150?text=Enhertu" alt="Enhertu">
-                    <h3>Enhertu</h3>
-                    <p>설명: 항체-약물 접합체 (ADC)</p>
-                    <p>작용기전: ADC 기술 기반 HER2 타겟팅</p>
-                    <button onclick="sections.forEach(s=>s.classList.remove('active')); document.getElementById('structure').classList.add('active'); loadPDB('1n8z'); navLinks.forEach(nl=>nl.classList.remove('active')); document.getElementById('nav_structure').classList.add('active');">구조 보기</button> </div>
-            </div>
-        </section>
-
-        <section id="history">
-            <h1>발전사</h1>
-            <div id="history_timeline">
-                <div class="timeline_event" id="e1975">1975 Monoclonal</div>
-                <div class="timeline_event" id="e1998">1998 Herceptin</div>
-                <div class="timeline_event" id="e2014">2014 Keytruda</div>
-                <div class="timeline_event" id="e2019">2019 Enhertu</div>
-                <div class="timeline_event" id="eBispecific">현재 Bispecific</div>
-                <div class="timeline_event" id="eADC">현재 ADC</div>
-            </div>
-            <div id="history_description">이벤트를 클릭하여 자세한 설명을 확인하세요.</div>
-        </section>
-
-        <section id="lesson">
-            <h1>오늘 배운 내용</h1>
-            <ul>
-                <li>✓ 항체는 구조가 맞아야 결합한다. (열쇠와 자물쇠)</li>
-                <li>✓ 항원 결합 부위가 항체의 특이성을 결정한다.</li>
-                <li>✓ 정밀한 구조 분석은 새로운 항체 의약품 개발의 핵심이다.</li>
-                <li>✓ 교과서 모형은 복잡한 실제 구조를 단순화하여 보여주는 것이다.</li>
-            </ul>
         </section>
     </main>
+
+    <script>
+        const v = $3Dmol.createViewer(document.getElementById('viewer'), {backgroundColor: 'black'});
+        
+        function d(part) {
+            const descs = {
+                'heavy': '긴 사슬: 항체의 중심 골격을 형성합니다.',
+                'light': '짧은 사슬: 구조적 안정성을 유지합니다.',
+                'fab': '가변 부위: 항원과 결합하는 핵심 부위입니다.'
+            };
+            document.getElementById('desc').innerText = descs[part];
+        }
+
+        function loadPDB(id) {
+            v.clear();
+            // 보안 정책을 준수하는 정식 경로로 호출
+            $3Dmol.download("pdb:" + id, v, {}, function() {
+                v.setStyle({}, {cartoon: {color: 'spectrum'}});
+                v.zoomTo();
+                v.render();
+            });
+        }
+
+        function show(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+    </script>
 </body>
 </html>
