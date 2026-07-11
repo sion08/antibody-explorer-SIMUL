@@ -3,46 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <title>항체 Explorer</title>
-    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/3dmol/2.0.4/3Dmol-min.js"></script>
     <style>
-        body { font-family: sans-serif; margin: 0; background: #f0f2f5; }
-        nav { background: #333; color: white; padding: 15px; display: flex; gap: 20px; }
-        nav a { color: white; text-decoration: none; cursor: pointer; }
-        .content { padding: 20px; }
-        .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; background: #f8f9fa; }
+        nav { background: #333; color: white; display: flex; padding: 15px; gap: 20px; }
+        nav a { color: white; text-decoration: none; cursor: pointer; font-weight: bold; }
+        main { padding: 20px; max-width: 1000px; margin: auto; }
+        .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .viewer-container { width: 100%; height: 400px; background: #000; border-radius: 8px; }
     </style>
 </head>
 <body>
     <nav>
-        <span>항체 Explorer</span>
+        <a onclick="showSection('structure')">🧬 구조 탐색</a>
+        <a onclick="showSection('geometry')">📐 기하학 분석</a>
+        <a onclick="showSection('medicine')">💊 항체 의약품</a>
     </nav>
-    <div class="content">
-        <div class="box">
-            <h2>교과서 모형 상세 설명</h2>
-            <p id="desc">항체 부위에 마우스를 올리세요.</p>
-            <svg width="300" height="300" viewBox="0 0 300 300">
-                <path id="heavy" d="M150,150 L100,50 M150,150 L200,50 M150,150 L150,250" stroke="#9a8cbf" stroke-width="20" fill="none" onmouseover="showDesc('heavy')" />
-                <path id="light" d="M80,80 L130,180 M220,80 L170,180" stroke="#9a8cbf" stroke-width="15" fill="none" onmouseover="showDesc('light')" />
-                <circle id="fab" cx="90" cy="40" r="20" fill="#27ae60" onmouseover="showDesc('fab')" />
-                <circle id="fab2" cx="210" cy="40" r="20" fill="#27ae60" onmouseover="showDesc('fab')" />
-            </svg>
-        </div>
 
-        <div class="box">
-            <h2>3차원 거리 계산 공식</h2>
-            <p>$$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$</p>
-            <p>좌표 A(2,5,1)와 B(4,7,3)의 거리: <strong>3.46 Å</strong></p>
-        </div>
-    </div>
+    <main>
+        <section id="structure">
+            <div class="box">
+                <h2>교과서 단순화 모형 (항체 부위 설명)</h2>
+                <p id="desc" style="color: blue; font-weight: bold;">항체 부위에 마우스를 올려보세요.</p>
+                <svg width="300" height="300" viewBox="0 0 300 300" style="cursor: pointer;">
+                    <path id="heavy" d="M150,150 L100,50 M150,150 L200,50 M150,150 L150,250" stroke="#9a8cbf" stroke-width="20" fill="none" onmouseover="desc('heavy')" />
+                    <path id="light" d="M80,80 L130,180 M220,80 L170,180" stroke="#9a8cbf" stroke-width="15" fill="none" onmouseover="desc('light')" />
+                    <circle id="fab" cx="90" cy="40" r="20" fill="#27ae60" onmouseover="desc('fab')" />
+                    <circle id="fab2" cx="210" cy="40" r="20" fill="#27ae60" onmouseover="desc('fab')" />
+                </svg>
+            </div>
+            <div class="viewer-container" id="viewer"></div>
+        </section>
+
+        <section id="geometry" style="display:none;">
+            <div class="box">
+                <h2>3차원 거리 계산 공식</h2>
+                <p>$$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$</p>
+                <p>좌표 A(2,5,1)와 B(4,7,3)의 거리 결과는 다음과 같습니다:</p>
+                <p style="font-size: 1.2rem; color: #d35400;">결과: <strong>3.46 Å</strong></p>
+            </div>
+        </section>
+
+        <section id="medicine" style="display:none;">
+            <div class="box">
+                <h2>항체 의약품별 구조 보기</h2>
+                <button onclick="loadPDB('5wku')">키트루다 구조</button>
+                <button onclick="loadPDB('1n8z')">허셉틴 구조</button>
+            </div>
+        </section>
+    </main>
 
     <script>
-        function showDesc(part) {
-            const descs = {
-                'heavy': '긴 사슬: 항체의 중심 골격을 이루는 부분입니다.',
-                'light': '짧은 사슬: 항체의 구조적 안정성을 유지합니다.',
-                'fab': '가변 부위(Fab): 항원을 직접 인식하고 결합하는 핵심 부위입니다.'
+        // 설명 인터랙션
+        function desc(part) {
+            const msgs = {
+                'heavy': '긴 사슬(Heavy Chain): 항체의 중심 골격을 형성합니다.',
+                'light': '짧은 사슬(Light Chain): 항체의 구조적 안정성을 유지합니다.',
+                'fab': '가변 부위(Fab): 항원과 결합하는 핵심 인식 영역입니다.'
             };
-            document.getElementById('desc').innerText = descs[part];
+            document.getElementById('desc').innerText = msgs[part];
+        }
+
+        // 섹션 전환
+        function showSection(id) {
+            document.querySelectorAll('section').forEach(s => s.style.display = 'none');
+            document.getElementById(id).style.display = 'block';
+        }
+
+        // PDB 로딩 (로그인 창 차단형 호출)
+        function loadPDB(pdbId) {
+            const viewer = $3Dmol.createViewer(document.getElementById('viewer'), {backgroundColor: 'black'});
+            // 데이터 보안 및 서버 접근 방식을 개선한 호출
+            $3Dmol.download("pdb:" + pdbId, viewer, {}, function() {
+                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+                viewer.zoomTo();
+                viewer.render();
+            });
         }
     </script>
 </body>
