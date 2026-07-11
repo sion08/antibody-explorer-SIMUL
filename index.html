@@ -3,86 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <title>항체 Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <script src="https://3dmol.org/build/3Dmol-min.js"></script>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         body { font-family: 'Malgun Gothic', sans-serif; margin: 0; background: #fafafa; }
         nav { background: #333; color: white; display: flex; justify-content: space-around; padding: 15px; }
-        nav a { color: white; text-decoration: none; cursor: pointer; }
-        section { display: none; padding: 20px; }
+        nav a { color: white; text-decoration: none; padding: 5px 10px; cursor: pointer; }
+        nav a.active { background: #2196F3; font-weight: bold; }
+        main { padding: 20px; }
+        section { display: none; }
         section.active { display: block; }
-        .canvas-area { width: 100%; height: 500px; background: #000; border-radius: 8px; }
         .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        #canvas_3d { width: 100%; height: 500px; background: black; border-radius: 8px; }
+        .med_card { background: white; padding: 15px; border-radius: 8px; border: 1px solid #ddd; margin-bottom: 10px; }
     </style>
 </head>
 <body>
     <nav>
-        <a onclick="show('structure')" class="active">🧬 구조 탐색</a>
-        <a onclick="show('medicine')">💊 항체 의약품</a>
-        <a onclick="show('geometry')">📐 기하학 분석</a>
+        <a href="#structure" class="active">🧬 구조 탐색</a>
+        <a href="#medicine">💊 항체 의약품</a>
+        <a href="#geometry">📐 기하학 분석</a>
     </nav>
 
     <main>
         <section id="structure" class="active">
             <div class="box">
-                <h2>교과서 모형 상세</h2>
-                <p id="desc">항체 부위에 마우스를 올려보세요.</p>
+                <h2>교과서 모형 및 실제 구조</h2>
+                <p id="desc">항체 부위에 마우스를 올리세요.</p>
                 <svg width="400" height="300" viewBox="0 0 400 300">
-                    <path d="M200,150 L150,50 M200,150 L250,50 M200,150 L200,250" stroke="#9a8cbf" stroke-width="20" fill="none" onmouseover="d('heavy')" />
-                    <path d="M130,80 L180,180 M270,80 L220,180" stroke="#9a8cbf" stroke-width="15" fill="none" onmouseover="d('light')" />
-                    <circle cx="140" cy="40" r="25" fill="#27ae60" onmouseover="d('fab')" />
-                    <circle cx="260" cy="40" r="25" fill="#27ae60" onmouseover="d('fab')" />
+                    <path d="M200,150 L150,50 M200,150 L250,50 M200,150 L200,250" stroke="#9a8cbf" stroke-width="20" fill="none" onmouseover="showDesc('heavy')" />
+                    <path d="M130,80 L180,180 M270,80 L220,180" stroke="#9a8cbf" stroke-width="15" fill="none" onmouseover="showDesc('light')" />
+                    <circle cx="140" cy="40" r="25" fill="#27ae60" onmouseover="showDesc('fab')" />
+                    <circle cx="260" cy="40" r="25" fill="#27ae60" onmouseover="showDesc('fab')" />
                 </svg>
             </div>
-            <div class="canvas-area" id="viewer"></div>
+            <div id="canvas_3d"></div>
         </section>
 
         <section id="medicine">
-            <div class="box">
-                <h2>항체 치료제</h2>
-                <div id="med_list">
-                    <h3>키트루다 (Keytruda)</h3>
-                    <p>질병: 흑색종 | 원리: PD-1/PD-L1 억제로 면역 세포 암세포 공격 유도</p>
-                    <button onclick="loadPDB('5wku')">입체 구조 보기</button>
-                </div>
+            <h1>항체 의약품 상세</h1>
+            <div class="med_card">
+                <h3>키트루다 (Keytruda)</h3>
+                <p>질병: 흑색종 및 폐암 | 원리: PD-1과 PD-L1 결합을 차단하여 면역 세포가 암세포를 공격하게 유도</p>
+                <button onclick="loadPDB('5wku')">실제 구조 보기</button>
+            </div>
+            <div class="med_card">
+                <h3>허셉틴 (Herceptin)</h3>
+                <p>질병: HER2 양성 유방암 | 원리: 암세포 표면의 HER2 수용체에 결합하여 암세포 증식 신호를 차단</p>
+                <button onclick="loadPDB('1n8z')">실제 구조 보기</button>
             </div>
         </section>
 
         <section id="geometry">
-            <div class="box">
-                <h2>3차원 거리 계산</h2>
-                <p>$$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$</p>
-            </div>
+            <h2>3차원 거리 계산 공식</h2>
+            <p>$$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$</p>
         </section>
     </main>
 
     <script>
-        const v = $3Dmol.createViewer(document.getElementById('viewer'), {backgroundColor: 'black'});
+        const viewer = $3Dmol.createViewer(document.getElementById('canvas_3d'), {backgroundColor: 'black'});
         
-        function d(part) {
+        function showDesc(part) {
             const descs = {
-                'heavy': '긴 사슬: 항체의 중심 골격을 형성합니다.',
-                'light': '짧은 사슬: 구조적 안정성을 유지합니다.',
-                'fab': '가변 부위: 항원과 결합하는 핵심 부위입니다.'
+                'heavy': '긴 사슬(Heavy Chain): 항체의 Y자 골격을 형성하는 기본 구조입니다.',
+                'light': '짧은 사슬(Light Chain): 가변 부위와 결합하여 항체 안정성을 유지합니다.',
+                'fab': '가변 부위(Fab): 항원과 결합하는 가장 핵심적인 인식 부위입니다.'
             };
             document.getElementById('desc').innerText = descs[part];
         }
 
-        function loadPDB(id) {
-            v.clear();
-            // 보안 정책을 준수하는 정식 경로로 호출
-            $3Dmol.download("pdb:" + id, v, {}, function() {
-                v.setStyle({}, {cartoon: {color: 'spectrum'}});
-                v.zoomTo();
-                v.render();
+        function loadPDB(pdbId) {
+            viewer.clear();
+            $3Dmol.download("pdb:" + pdbId, viewer, {}, function() {
+                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
+                viewer.zoomTo();
+                viewer.render();
             });
         }
-
-        function show(id) {
-            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        
+        // 내비게이션 로직
+        document.querySelectorAll('nav a').forEach(a => {
+            a.addEventListener('click', (e) => {
+                document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+                document.querySelector(e.target.getAttribute('href')).classList.add('active');
+            });
+        });
     </script>
 </body>
 </html>
