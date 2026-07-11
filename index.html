@@ -2,116 +2,48 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>항체 Explorer Pro</title>
-    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
-    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/3dmol/2.0.4/3Dmol-min.js"></script>
+    <title>항체 Explorer</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
-        body { font-family: 'Malgun Gothic', sans-serif; margin: 0; background: #f4f7f6; }
-        nav { background: #2c3e50; color: white; display: flex; justify-content: space-around; padding: 15px; }
-        nav a { color: #bdc3c7; text-decoration: none; font-weight: bold; cursor: pointer; }
-        nav a.active { color: white; }
-        main { padding: 30px; max-width: 1100px; margin: auto; }
-        section { display: none; }
-        section.active { display: block; }
-        .canvas-wrapper { width: 100%; height: 500px; background: #000; border-radius: 10px; position: relative; }
-        .info-panel { background: white; padding: 20px; border-radius: 10px; margin-top: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .med-card { background: white; padding: 20px; margin: 10px 0; border-radius: 10px; display: flex; align-items: center; gap: 20px; }
+        body { font-family: sans-serif; margin: 0; background: #f0f2f5; }
+        nav { background: #333; color: white; padding: 15px; display: flex; gap: 20px; }
+        nav a { color: white; text-decoration: none; cursor: pointer; }
+        .content { padding: 20px; }
+        .box { background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
-
     <nav>
-        <a href="#structure" class="active">🧬 구조 탐색</a>
-        <a href="#geometry">📐 기하학 분석</a>
-        <a href="#medicine">💊 항체 의약품(PDB 연동)</a>
+        <span>항체 Explorer</span>
     </nav>
-    
-    <main>
-        <section id="structure" class="active">
-            <h2>교과서 모형 vs 실제 구조</h2>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-                <div class="info-panel">
-                    <h3>교과서 단순화 모형</h3>
-                    <svg id="textbook_svg" width="300" height="300" viewBox="0 0 300 300">
-                        <path d="M150,150 L100,50" stroke="#9a8cbf" stroke-width="20" stroke-linecap="round" id="heavy_chain_l" />
-                        <path d="M150,150 L200,50" stroke="#9a8cbf" stroke-width="20" stroke-linecap="round" id="heavy_chain_r" />
-                        <path d="M150,150 L150,250" stroke="#9a8cbf" stroke-width="20" stroke-linecap="round" id="base_stem" />
-                        <path d="M80,80 L130,180" stroke="#9a8cbf" stroke-width="15" stroke-linecap="round" id="light_chain_l" />
-                        <path d="M220,80 L170,180" stroke="#9a8cbf" stroke-width="15" stroke-linecap="round" id="light_chain_r" />
-                        <circle cx="90" cy="40" r="20" fill="#27ae60" id="fab_l" />
-                        <circle cx="210" cy="40" r="20" fill="#27ae60" id="fab_r" />
-                    </svg>
-                    <p id="part_desc" style="font-weight:bold; color:red;">이미지 부위에 마우스를 올리세요.</p>
-                </div>
-                <div class="canvas-wrapper" id="viewer_main"></div>
-            </div>
-        </section>
+    <div class="content">
+        <div class="box">
+            <h2>교과서 모형 상세 설명</h2>
+            <p id="desc">항체 부위에 마우스를 올리세요.</p>
+            <svg width="300" height="300" viewBox="0 0 300 300">
+                <path id="heavy" d="M150,150 L100,50 M150,150 L200,50 M150,150 L150,250" stroke="#9a8cbf" stroke-width="20" fill="none" onmouseover="showDesc('heavy')" />
+                <path id="light" d="M80,80 L130,180 M220,80 L170,180" stroke="#9a8cbf" stroke-width="15" fill="none" onmouseover="showDesc('light')" />
+                <circle id="fab" cx="90" cy="40" r="20" fill="#27ae60" onmouseover="showDesc('fab')" />
+                <circle id="fab2" cx="210" cy="40" r="20" fill="#27ae60" onmouseover="showDesc('fab')" />
+            </svg>
+        </div>
 
-        <section id="geometry">
-            <h2>기하학 분석</h2>
-            <div class="info-panel">
-                <p>두 원자 사이의 거리를 계산하는 공식입니다:</p>
-                <div style="font-size: 1.5rem; margin: 20px; padding: 20px; background: #eee;">
-                    $$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$
-                </div>
-                <p>좌표 A(2,5,1)와 B(4,7,3) 사이의 거리는 <strong>3.46 Å</strong> 입니다.</p>
-            </div>
-        </section>
-
-        <section id="medicine">
-            <h2>항체 의약품 리스트</h2>
-            <div class="med-card">
-                <div>
-                    <h3>키트루다 (Keytruda)</h3>
-                    <p>면역관문억제제. 암세포가 T세포를 회피하지 못하게 차단합니다.</p>
-                    <button onclick="loadPDB('5wku')">키트루다 구조 보기</button>
-                </div>
-            </div>
-            <div class="med-card">
-                <div>
-                    <h3>허셉틴 (Herceptin)</h3>
-                    <p>유방암 타겟. HER2 수용체에 결합하여 암세포 증식 신호를 차단합니다.</p>
-                    <button onclick="loadPDB('1n8z')">허셉틴 구조 보기</button>
-                </div>
-            </div>
-            <div class="canvas-wrapper" id="viewer_med" style="height: 300px; margin-top: 20px;"></div>
-        </section>
-    </main>
+        <div class="box">
+            <h2>3차원 거리 계산 공식</h2>
+            <p>$$d = \sqrt{(x_2-x_1)^2 + (y_2-y_1)^2 + (z_2-z_1)^2}$$</p>
+            <p>좌표 A(2,5,1)와 B(4,7,3)의 거리: <strong>3.46 Å</strong></p>
+        </div>
+    </div>
 
     <script>
-        // 1. 단순화 모형 인터랙션
-        const descriptions = {
-            "heavy_chain_l": "긴 사슬(Heavy Chain): 항체의 골격을 형성하는 기본 구조입니다.",
-            "base_stem": "불변 부위(Fc 영역): 면역 시스템의 다른 세포들과 결합하는 부위입니다.",
-            "fab_l": "가변 부위(Fab 영역): 항원과 직접 결합하는 가장 핵심적인 부위입니다.",
-            "light_chain_l": "짧은 사슬(Light Chain): 가변 부위와 결합하여 구조적 안정성을 줍니다."
-        };
-        document.querySelectorAll('path, circle').forEach(el => {
-            el.addEventListener('mouseover', () => {
-                document.getElementById('part_desc').textContent = descriptions[el.id] || "항체 구조 탐색 중...";
-            });
-        });
-
-        // 2. PDB 로딩 함수
-        function loadPDB(pdbId) {
-            const viewer = $3Dmol.createViewer(document.getElementById('viewer_med'), {backgroundColor: 'black'});
-            $3Dmol.download("pdb:" + pdbId, viewer, {}, function() {
-                viewer.setStyle({}, {cartoon: {color: 'spectrum'}});
-                viewer.zoomTo();
-                viewer.render();
-            });
+        function showDesc(part) {
+            const descs = {
+                'heavy': '긴 사슬: 항체의 중심 골격을 이루는 부분입니다.',
+                'light': '짧은 사슬: 항체의 구조적 안정성을 유지합니다.',
+                'fab': '가변 부위(Fab): 항원을 직접 인식하고 결합하는 핵심 부위입니다.'
+            };
+            document.getElementById('desc').innerText = descs[part];
         }
-        
-        // 3. 내비게이션
-        document.querySelectorAll('nav a').forEach(a => {
-            a.addEventListener('click', (e) => {
-                document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
-                document.querySelector(e.target.getAttribute('href')).classList.add('active');
-                document.querySelectorAll('nav a').forEach(n => n.classList.remove('active'));
-                e.target.classList.add('active');
-            });
-        });
     </script>
 </body>
 </html>
